@@ -5,6 +5,7 @@ import com.falkenstein.rrassist.controller.dto.GameFrontendDto;
 import com.falkenstein.rrassist.exclusiongame.GameDto;
 import com.falkenstein.rrassist.exclusiongame.GameManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +19,10 @@ public class GameController {
     /**
      * Launches a completely new game.
      */
+    @CrossOrigin(origins = {
+            "http://localhost:3000",  // Local development
+            "https://rrassistantfe.onrender.com/"  // Your Render frontend URL
+    })
     @PostMapping("/game/new")
     public GameFrontendDto startNewGame() {
         return new GameFrontendDto(gameManager.generateNewGame());
@@ -26,6 +31,10 @@ public class GameController {
     /**
      * The only endpoint that pushes the game state properly - excludes a species.
      */
+    @CrossOrigin(origins = {
+            "http://localhost:3000",  // Local development
+            "https://rrassistantfe.onrender.com/"  // Your Render frontend URL
+    })
     @PostMapping("/game/exclude")
     public GameFrontendDto excludeSpecies(@RequestBody ExcludeSpeciesDto inputDto) {
         var response = gameManager.excludeSpecies(inputDto.gameId(), inputDto.speciesId(), inputDto.form());
