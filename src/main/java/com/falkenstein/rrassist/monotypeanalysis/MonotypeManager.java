@@ -3,6 +3,7 @@ package com.falkenstein.rrassist.monotypeanalysis;
 import com.falkenstein.rrassist.data.EStat;
 import com.falkenstein.rrassist.data.EType;
 import com.falkenstein.rrassist.data.SpeciesDataManager;
+import com.falkenstein.rrassist.data.TypeEffectivenessManager;
 import com.falkenstein.rrassist.data.processed.SpeciesDto;
 import com.falkenstein.rrassist.docs.GDocsManager;
 import com.falkenstein.rrassist.docs.MonotypeThreeDocsDto;
@@ -23,11 +24,13 @@ public class MonotypeManager {
 
     private final GDocsManager gDocsManager;
     private final SpeciesDataManager speciesDataManager;
+    private final TypeEffectivenessManager typeEffectivenessManager;
 
     @Autowired
-    public MonotypeManager(GDocsManager gDocsManager, SpeciesDataManager speciesDataManager) {
+    public MonotypeManager(GDocsManager gDocsManager, SpeciesDataManager speciesDataManager, TypeEffectivenessManager typeEffectivenessManager) {
         this.gDocsManager = gDocsManager;
         this.speciesDataManager = speciesDataManager;
+        this.typeEffectivenessManager = typeEffectivenessManager;
     }
 
     public List<MonotypeThreeRunDto> composeMonotypeTeams() throws GeneralSecurityException, IOException {
@@ -68,7 +71,9 @@ public class MonotypeManager {
     public String rateTeam(MonotypeThreeRunDto team) {
         PivotingEvaluationDto pivotingEvaluation = rateTeamPivoting(team);
         DurabilityEvaluationDto durabilityEvaluation = rateTeamDurability(team);
-        System.out.println(team.type() + " Pivoting: " + pivotingEvaluation + ", Durability: " + durabilityEvaluation);
+        CoverageEvaluationDto coverageEvaluation = rateTeamCoverage(team);
+        int totalScore = pivotingEvaluation.score() + durabilityEvaluation.score() + coverageEvaluation.score();
+        System.out.println(team.type() + ": " + totalScore + ": " + pivotingEvaluation + ", " + durabilityEvaluation + ", " + coverageEvaluation);
         return "Team rating logic not implemented yet.";
     }
 
@@ -169,11 +174,24 @@ public class MonotypeManager {
                 .toList();
     }
 
+    /**
+     * Rates the coverage of a team based on its members.
+     *
+     * The score is calculated as follows:
+     * - 6 points for full coverage (no missing types)
+     * - 5 points for 1 missing type
+     * - 4 points for 2 missing types
+     * - etc.
+     */
     private CoverageEvaluationDto rateTeamCoverage(MonotypeThreeRunDto team) {
         List<SpeciesDto> noEarlyAndLate = Stream.of(team.core(), team.pure(), team.visitor())
                 .flatMap(List::stream)
                 .toList();
         List<EType> typesOfTheTeam = noEarlyAndLate.stream().map(SpeciesDto::types).flatMap(List::stream).distinct().toList();
-        return new CoverageEvaluationDto(0, Collections.emptyList());
+        List<EType> coveredTypes = typeEffectivenessManager.getSuperEffectiveCoverage(typesOfTheTeam);
+        List<EType> missingTypes = Arrays.stream(EType.values())
+                .filter(type -> !coveredTypes.contains(type))
+                .toList();
+        return new CoverageEvaluationDto(Math.max(0, 6 - missingTypes.size()), missingTypes);
     }
 }

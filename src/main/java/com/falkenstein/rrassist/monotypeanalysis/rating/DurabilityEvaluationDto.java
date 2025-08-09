@@ -9,4 +9,9 @@ public record DurabilityEvaluationDto(
         SpeciesDto specialTank,
         SpeciesDto secondarySpecialTank
 ) {
+
+    @Override
+    public String toString() {
+        return "Durability: " + score + " (" + physicalTank + ", " + secondaryPhysicalTank + ", " + specialTank + ", " + secondarySpecialTank + ")";
+    }
 }

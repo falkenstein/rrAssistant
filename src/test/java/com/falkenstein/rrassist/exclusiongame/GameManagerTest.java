@@ -2,6 +2,7 @@ package com.falkenstein.rrassist.exclusiongame;
 
 import com.falkenstein.rrassist.data.EStat;
 import com.falkenstein.rrassist.data.SpeciesDataManager;
+import com.falkenstein.rrassist.data.TypeEffectivenessManager;
 import com.falkenstein.rrassist.data.processed.SpeciesDto;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class GameManagerTest {
 
-    private SpeciesDataManager speciesDataManager = new SpeciesDataManager();
+    private SpeciesDataManager speciesDataManager = new SpeciesDataManager(new TypeEffectivenessManager());
     private GameManager gameManager = new GameManager(speciesDataManager); // No need to mock anything.
 
     GameManagerTest() throws IOException {

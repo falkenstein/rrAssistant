@@ -11,4 +11,9 @@ public record MoveDto(
         String description,
         ESplit split
 ) {
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

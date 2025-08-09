@@ -11,6 +11,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -23,8 +24,8 @@ import java.util.*;
  */
 @Service
 public class SpeciesDataManager {
-
-    private List<String> formlessPokemon = List.of(
+    private final TypeEffectivenessManager typeEffectivenessManager;
+    private final List<String> formlessPokemon = List.of(
             "Ho-Oh",
             "Porygon-Z",
             "Ting-Lu",
@@ -38,6 +39,11 @@ public class SpeciesDataManager {
             "Toxtricity-Low-Key",
             "Terapagos-Terastal"
     );
+
+    @Autowired
+    public SpeciesDataManager(TypeEffectivenessManager typeEffectivenessManager) {
+        this.typeEffectivenessManager = typeEffectivenessManager;
+    }
 
     /**
      * Loads the basic species data from the resources file (rrBasicData.html).
@@ -219,7 +225,7 @@ public class SpeciesDataManager {
                         composeTypeResists(types, fullDataDto.types()),
                         fullDataSpecies.ancestor(),
                         getForms(fullDataSpecies.key()),
-                        composeTypeMatchups(types, fullDataDto.types())
+                        typeEffectivenessManager.composeTypeMatchups(types)
                 );
                 species.add(speciesDto);
             } catch (Exception e) {
@@ -259,39 +265,6 @@ public class SpeciesDataManager {
             resists.put(type, resist);
         }
         return resists;
-    }
-
-    /**
-     * Composes the offensive type matchups for the given types.
-     */
-    public Map<EType, EMatchup> composeTypeMatchups(List<EType> types, Map<Integer, FullDataTypeDto> typeData) {
-        Map<EType, List<EMatchup>> matchups = new HashMap<>();
-        for (EType attackingType : types) {
-            FullDataTypeDto entry = typeData.get(attackingType.getId());
-            List<Integer> definedMatchups = entry.matchup();
-            for (EType defendingType : types) {
-                EMatchup matchup = EMatchup.fromId(definedMatchups.get(defendingType.getId()));
-                if (!matchups.containsKey(attackingType)) {
-                    matchups.put(attackingType, new ArrayList<>());
-                }
-                matchups.get(attackingType).add(matchup);
-            }
-        }
-        Map<EType, EMatchup> results = new HashMap<>();
-        for (Map.Entry<EType, List<EMatchup>> entry : matchups.entrySet()) {
-            EType type = entry.getKey();
-            List<EMatchup> matchupList = entry.getValue();
-            String max = matchupList.stream().map(it -> it.multiplier).sorted().toList().getLast().toString();
-            EMatchup effectiveness = switch (max) {
-                case "1.0" -> EMatchup.STANDARD;
-                case "0.0" -> EMatchup.IMMUNE;
-                case "0.5" -> EMatchup.NOT_VERY_EFFECTIVE;
-                case "2.0" -> EMatchup.SUPER_EFFECTIVE;
-                default -> throw new IllegalArgumentException("Unknown resistance multiplier: " + max);
-            };
-            results.put(type, effectiveness);
-        }
-        return results;
     }
 
     private List<EForm> getForms(String speciesKey) {

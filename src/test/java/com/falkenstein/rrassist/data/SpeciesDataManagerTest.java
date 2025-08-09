@@ -9,10 +9,11 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SpeciesDataManagerTest {
 
-    private final SpeciesDataManager speciesDataManager = new SpeciesDataManager();
+    private final SpeciesDataManager speciesDataManager = new SpeciesDataManager(new TypeEffectivenessManager());
 
     @Test
     void testLoadFullData() throws IOException {
@@ -46,6 +47,19 @@ class SpeciesDataManagerTest {
                 null,
                 null
         );
-        System.out.println(species);
+        assertEquals("Bulbasaur", species.toString());
+    }
+
+    @Test
+    void testLoadedMoves() throws IOException {
+        List<SpeciesDto> allSpecies = speciesDataManager.loadFullSpeciesData();
+        var bulbasaurMoves = allSpecies.getFirst().levelUpMoves();
+        assertTrue(bulbasaurMoves.keySet().stream().anyMatch(it -> it.name().equals("Leech Seed")));
+    }
+
+    @Test
+    void testStabCoverage() throws IOException {
+        List<SpeciesDto> allSpecies = speciesDataManager.loadFullSpeciesData();
+        System.out.println(allSpecies.getFirst().matchups());
     }
 }
